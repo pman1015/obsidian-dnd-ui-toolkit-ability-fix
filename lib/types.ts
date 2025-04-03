@@ -22,8 +22,9 @@ export type AbilityModifier = {
 }
 
 export type StatItem = {
-	name: string;
+	label: string;
 	value: string | number;
+	sublabel?: string;
 }
 
 export type StatsBlock = {

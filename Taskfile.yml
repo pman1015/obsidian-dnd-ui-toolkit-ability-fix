@@ -1,0 +1,33 @@
+version: '3'
+dotenv:
+  - .env
+tasks:
+  build:
+    cmds:
+      - npm run build
+      # Copy output to $PLUGIN_DIR, forcibly overwriting existing files
+      - |
+        if [ -n "$PLUGIN_DIR" ]; then
+          echo "Copying files to $PLUGIN_DIR (overwriting existing files)"
+          mkdir -p "$PLUGIN_DIR"
+          cp -f main.js manifest.json "$PLUGIN_DIR/"
+          if [ -f styles.css ]; then
+            cp -f styles.css "$PLUGIN_DIR/"
+          fi
+          if [ -d assets ]; then
+            mkdir -p "$PLUGIN_DIR/assets"
+            cp -rf assets/* "$PLUGIN_DIR/assets/"
+          fi
+          echo "Files copied successfully!"
+        else
+          echo "PLUGIN_DIR not set. Skipping copy."
+        fi
+    sources:
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.css"
+      - "!node_modules/**/*"
+      - "!dist/**/*"
+    generates:
+      - "main.js"
+      - "styles.css"
