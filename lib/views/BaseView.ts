@@ -22,8 +22,7 @@ export abstract class BaseView {
 			} else if (typeof result === 'string') {
 				div.innerHTML = result;
 			} else {
-				// If render returns void (modifies div directly)
-				console.log("Rendering code block", this.codeblock);
+				throw new Error("Render function did not return a valid HTMLElement or string");
 			}
 		} catch (e) {
 			console.error("Error rendering code block", e);

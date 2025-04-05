@@ -17,8 +17,6 @@ export class SkillsView extends BaseView {
 
 		const frontmatter = this.frontmatter(ctx)
 
-		console.log("SkillsView", skillsBlock, abilityBlock, frontmatter)
-
 		for (const skill of SkillsService.Skills) {
 			const isProficient = skillsBlock.proficiencies.find((x) => {
 				return x.toLowerCase() === skill.label.toLowerCase()
