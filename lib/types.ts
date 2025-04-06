@@ -45,3 +45,28 @@ export type SkillsBlock = {
 }
 
 export type SkillsBlockBonus = GenericBonus
+
+export type HealthBlock = {
+	label: string;
+	state_key: string;
+	health: number;
+	hitdice?: {
+		dice: string;
+		value: number;
+	};
+}
+
+export type ConsumableBlock = {
+	label: string;
+	state_key: string;
+	uses: number;
+}
+
+export type BadgeItem = {
+	label: string;
+	value: string;
+}
+
+export type BadgesBlock = {
+	items: BadgeItem[];
+}
