@@ -10,7 +10,7 @@ export type HealthCardProps = {
 }
 
 export function HealthCard(props: HealthCardProps) {
-	const [inputValue, setInputValue] = useState("");
+	const [inputValue, setInputValue] = useState("1");
 
 	// Calculate health percentage for progress bar
 	const healthPercentage = Math.max(0, Math.min(100, (props.state.current / props.static.health) * 100));
@@ -25,7 +25,7 @@ export function HealthCard(props: HealthCardProps) {
 			...props.state,
 			current: newCurrent
 		});
-		setInputValue("");
+		setInputValue("1");
 	};
 
 	const handleDamage = () => {
@@ -53,7 +53,7 @@ export function HealthCard(props: HealthCardProps) {
 			current: newCurrent,
 			temporary: newTemp
 		});
-		setInputValue("");
+		setInputValue("1");
 	};
 
 	const handleTempHP = () => {
@@ -67,7 +67,7 @@ export function HealthCard(props: HealthCardProps) {
 			...props.state,
 			temporary: newTemp
 		});
-		setInputValue("");
+		setInputValue("1");
 	};
 
 	// Handle hit dice interaction
