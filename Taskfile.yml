@@ -31,3 +31,8 @@ tasks:
     generates:
       - "main.js"
       - "styles.css"
+
+  release:
+    desc: Release a new minor version of the plugin
+    cmds:
+      - ./release.sh
