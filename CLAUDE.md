@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Build production version (with TypeScript checks)
 - `npm version patch|minor|major` - Bump version
 - `task build` - Build and optionally copy to plugin directory (if PLUGIN_DIR is set)
+- `task release` - Release a new minor version
 - `eslint main.ts` - Lint specific file
 - `eslint ./lib/` - Lint all files in directory
 
@@ -25,3 +26,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **State Management:** Use React hooks (useState) for component state
 - **CSS:** Prefix all styles with plugin namespace; place component styles in lib/styles/components/
 - **File Structure:** Keep code aligned with domain separation (domains, components, views)
+
+## Architecture
+- **Plugin Structure:** Obsidian plugin with React components for D&D UI elements
+- **Code Block Processors:** Each View class processes specific YAML code blocks (ability, skills, stats, etc.)
+- **State Management:** Uses KeyValueStore with JsonDataStore for persistent state across sessions
+- **Component Architecture:**
+  - Views: Handle code block parsing and rendering (extend BaseView)
+  - Components: React components for UI elements
+  - Domains: Business logic for D&D mechanics (abilities, skills, combat)
+  - Services: KV store for state persistence
+- **Rendering:** Views register markdown post-processors that transform YAML into interactive React components
+- **Plugin Settings:** Configurable color scheme and state file path in settings tab
