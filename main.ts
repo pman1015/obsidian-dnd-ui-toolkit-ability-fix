@@ -97,14 +97,19 @@ export default class DndUIToolkitPlugin extends Plugin {
 	dataStore: JsonDataStore;
 
 	applyColorSettings(): void {
-		const root = document.documentElement;
-
-		Object.entries(this.settings).forEach(([key, value]) => {
-			if (key.startsWith("color")) {
-				const cssVarName = `--${key
-					.replace(/([A-Z])/g, "-$1")
-					.toLowerCase()}`;
-				root.style.setProperty(cssVarName, value as string);
+		// Apply to all open windows
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			const windowDoc = leaf.view.containerEl.ownerDocument;
+			if (windowDoc) {
+				const root = windowDoc.documentElement;
+				Object.entries(this.settings).forEach(([key, value]) => {
+					if (key.startsWith("color")) {
+						const cssVarName = `--${key
+							.replace(/([A-Z])/g, "-$1")
+							.toLowerCase()}`;
+						root.style.setProperty(cssVarName, value as string);
+					}
+				});
 			}
 		});
 	}
@@ -114,6 +119,14 @@ export default class DndUIToolkitPlugin extends Plugin {
 
 		// Apply color settings on load
 		this.applyColorSettings();
+
+		// Listen for new windows and apply settings to them
+		this.registerEvent(
+			this.app.workspace.on('window-open', () => {
+				// Use setTimeout to ensure the window is fully initialized
+				setTimeout(() => this.applyColorSettings(), 100);
+			})
+		);
 
 		// Initialize the JsonDataStore with the configured path
 		this.initDataStore();
@@ -160,7 +173,7 @@ export default class DndUIToolkitPlugin extends Plugin {
 		);
 	}
 
-	onunload() {}
+	onunload() { }
 
 	async loadSettings() {
 		this.settings = Object.assign(
@@ -207,53 +220,65 @@ class DndSettingsTab extends PluginSettingTab {
 					})
 			);
 
+
+		containerEl.createEl("h3", { text: "Styles" });
+
 		// Add color inputs for each color variable
-		this.addColorSetting(
-			containerEl,
-			"Background Primary",
-			"colorBgPrimary"
-		);
-		this.addColorSetting(
-			containerEl,
-			"Background Secondary",
-			"colorBgSecondary"
-		);
-		this.addColorSetting(
-			containerEl,
-			"Background Tertiary",
-			"colorBgTertiary"
-		);
+		this.addColorSetting(containerEl, "Background Primary", "colorBgPrimary");
+		this.addColorSetting(containerEl, "Background Secondary", "colorBgSecondary");
+		this.addColorSetting(containerEl, "Background Tertiary", "colorBgTertiary");
 		this.addColorSetting(containerEl, "Background Hover", "colorBgHover");
 		this.addColorSetting(containerEl, "Background Darker", "colorBgDarker");
 		this.addColorSetting(containerEl, "Background Group", "colorBgGroup");
-		this.addColorSetting(
-			containerEl,
-			"Background Proficient",
-			"colorBgProficient"
-		);
+		this.addColorSetting(containerEl, "Background Proficient", "colorBgProficient");
 
 		this.addColorSetting(containerEl, "Text Primary", "colorTextPrimary");
-		this.addColorSetting(
-			containerEl,
-			"Text Secondary",
-			"colorTextSecondary"
-		);
+		this.addColorSetting(containerEl, "Text Secondary", "colorTextSecondary");
 		this.addColorSetting(containerEl, "Text Sublabel", "colorTextSublabel");
 		this.addColorSetting(containerEl, "Text Bright", "colorTextBright");
 		this.addColorSetting(containerEl, "Text Muted", "colorTextMuted");
 		this.addColorSetting(containerEl, "Text Group", "colorTextGroup");
 
-		this.addColorSetting(
-			containerEl,
-			"Border Primary",
-			"colorBorderPrimary"
-		);
+		this.addColorSetting(containerEl, "Border Primary", "colorBorderPrimary");
 		this.addColorSetting(containerEl, "Border Active", "colorBorderActive");
 		this.addColorSetting(containerEl, "Border Focus", "colorBorderFocus");
 
 		this.addColorSetting(containerEl, "Accent Teal", "colorAccentTeal");
 		this.addColorSetting(containerEl, "Accent Red", "colorAccentRed");
 		this.addColorSetting(containerEl, "Accent Purple", "colorAccentPurple");
+
+		new Setting(containerEl).setName("Reset Styles").addButton((b) => {
+			b.setButtonText("Reset").onClick(async () => {
+				const colors: (keyof DndUIToolkitSettings)[] = [
+					"colorBgPrimary",
+					"colorBgSecondary",
+					"colorBgTertiary",
+					"colorBgHover",
+					"colorBgDarker",
+					"colorBgGroup",
+					"colorBgProficient",
+					"colorTextPrimary",
+					"colorTextSecondary",
+					"colorTextSublabel",
+					"colorTextBright",
+					"colorTextMuted",
+					"colorTextGroup",
+					"colorBorderPrimary",
+					"colorBorderActive",
+					"colorBorderFocus",
+					"colorAccentTeal",
+					"colorAccentRed",
+					"colorAccentPurple",
+				]
+
+				for (const colorKey of colors) {
+					this.plugin.settings[colorKey] = DEFAULT_SETTINGS[colorKey];
+				}
+				await this.plugin.saveSettings();
+				this.plugin.applyColorSettings();
+			})
+		})
+
 	}
 
 	// Helper method to add color picker setting
@@ -261,7 +286,6 @@ class DndSettingsTab extends PluginSettingTab {
 		containerEl: HTMLElement,
 		name: string,
 		settingKey: keyof DndUIToolkitSettings,
-		description?: string,
 	): void {
 		new Setting(containerEl).setName(name).addColorPicker((colorPicker) =>
 			colorPicker
