@@ -98,19 +98,28 @@ export default class DndUIToolkitPlugin extends Plugin {
 	dataStore: JsonDataStore;
 
 	applyColorSettings(): void {
+		const apply = (root: HTMLElement) => {
+			Object.entries(this.settings).forEach(([key, value]) => {
+				if (key.startsWith("color")) {
+					const cssVarName = `--${key
+						.replace(/([A-Z])/g, "-$1")
+						.toLowerCase()}`;
+					root.style.setProperty(cssVarName, value as string);
+				}
+			});
+		}
+
+		// Apply to main document
+		const root = document.documentElement;
+		if (root) {
+			apply(root);
+		}
+
 		// Apply to all open windows
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			const windowDoc = leaf.view.containerEl.ownerDocument;
 			if (windowDoc) {
-				const root = windowDoc.documentElement;
-				Object.entries(this.settings).forEach(([key, value]) => {
-					if (key.startsWith("color")) {
-						const cssVarName = `--${key
-							.replace(/([A-Z])/g, "-$1")
-							.toLowerCase()}`;
-						root.style.setProperty(cssVarName, value as string);
-					}
-				});
+				apply(windowDoc.documentElement);
 			}
 		});
 	}
