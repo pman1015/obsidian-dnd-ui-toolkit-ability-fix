@@ -61,7 +61,7 @@ abilities:
 bonuses:
   - name: Right of Power
     target: strength
-	value: 2
+    value: 2
 
 proficiencies:
   - intelligence
@@ -93,7 +93,7 @@ proficiencies:
 bonuses:
   - name: Right of Arcana
     target: arcana
-	value: 2
+    value: 2
 
 proficiencies:
   - deception
