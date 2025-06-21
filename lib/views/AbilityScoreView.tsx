@@ -1,49 +1,47 @@
-import * as Tmpl from "lib/html-templates"
-import * as Components from "lib/components"
+import * as Tmpl from "lib/html-templates";
+import { AbilityView } from "lib/components/ability-cards";
 import { BaseView } from "./BaseView";
 import { MarkdownPostProcessorContext } from "obsidian";
-import * as AbilityService from "lib/domains/abilities"
+import * as AbilityService from "lib/domains/abilities";
+import { Ability } from "lib/types";
 
 export class AbilityScoreView extends BaseView {
-	public codeblock = "ability";
+  public codeblock = "ability";
 
-	public render(source: string, __: HTMLElement, ctx: MarkdownPostProcessorContext): string {
-		const abilityBlock = AbilityService.parseAbilityBlock(source);
+  public render(source: string, __: HTMLElement, ctx: MarkdownPostProcessorContext): string {
+    const abilityBlock = AbilityService.parseAbilityBlock(source);
 
-		const data: Components.Ability[] = []
+    const data: Ability[] = [];
 
-		const frontmatter = this.frontmatter(ctx)
+    const frontmatter = this.frontmatter(ctx);
 
+    for (const [key, value] of Object.entries(abilityBlock.abilities)) {
+      const isProficient = abilityBlock.proficiencies.includes(key);
 
-		for (const [key, value] of Object.entries(abilityBlock.abilities)) {
-			const isProficient = abilityBlock.proficiencies.includes(key);
+      const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-			const label = key.charAt(0).toUpperCase() + key.slice(1);
+      let savingThrowValue = AbilityService.calculateModifier(value);
+      if (isProficient) {
+        savingThrowValue += frontmatter.proficiencyBonus;
+      }
 
-			let savingThrowValue = AbilityService.calculateModifier(value)
-			if (isProficient) {
-				savingThrowValue += frontmatter.proficiencyBonus;
-			}
+      for (const bonus of abilityBlock.bonuses) {
+        if (bonus.target.toLowerCase() === key) {
+          savingThrowValue += bonus.value;
+        }
+      }
 
+      const abbreviation = label.substring(0, 3).toUpperCase();
 
-			for (const bonus of abilityBlock.bonuses) {
-				if (bonus.target.toLowerCase() === key) {
-					savingThrowValue += bonus.value;
-				}
-			}
+      data.push({
+        label: abbreviation,
+        total: value,
+        modifier: AbilityService.calculateModifier(value),
+        isProficient: isProficient,
+        savingThrow: savingThrowValue,
+      });
+    }
 
-			const abbreviation = label.substring(0, 3).toUpperCase();
-
-			data.push({
-				label: abbreviation,
-				total: value,
-				modifier: AbilityService.calculateModifier(value),
-				isProficient: isProficient,
-				savingThrow: savingThrowValue,
-			})
-		}
-
-		return Tmpl.Render(Components.AbilityView(data));
-	}
+    return Tmpl.Render(AbilityView(data));
+  }
 }
-

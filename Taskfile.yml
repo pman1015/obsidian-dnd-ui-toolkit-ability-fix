@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 dotenv:
   - .env
 tasks:
@@ -33,7 +33,19 @@ tasks:
       - "main.js"
       - "styles.css"
 
+  pr:
+    desc: Prepare for PR - format code, lint, and type check
+    cmds:
+      - npm run format
+      - npm run lint
+      - npm run typecheck
+      - npm run test
+
   release:
     desc: Release a new minor version of the plugin
     cmds:
+      - npm run format:check
+      - npm run typecheck
+      - npm run lint
+      - npm run test
       - ./release.sh

@@ -6,10 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` - Start compilation in watch mode
 - `npm run build` - Build production version (with TypeScript checks)
 - `npm version patch|minor|major` - Bump version
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting with Prettier
+- `npm run lint` - Lint code with ESLint
+- `npm run lint:fix` - Lint and fix code with ESLint
+- `npm run typecheck` - Run TypeScript type checking
 - `task build` - Build and optionally copy to plugin directory (if PLUGIN_DIR is set)
-- `task release` - Release a new minor version
-- `eslint main.ts` - Lint specific file
-- `eslint ./lib/` - Lint all files in directory
+- `task pr` - Prepare for PR (format, lint, and type check)
+- `task release` - Release a new minor version (includes format and lint checks)
 
 ## Code Style
 - **TypeScript:** Use strict typing (noImplicitAny, strictNullChecks)
