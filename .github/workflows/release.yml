@@ -31,13 +31,10 @@ jobs:
 
           gh release create "$tag" \
             --title="$tag" \
-            --draft \
+            --draft=false \
+            --notes-from-tag \
             main.js manifest.json styles.css
 
   deploy-docs:
-    runs-on: ubuntu-latest
     needs: build
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy documentation
-        uses: ./.github/workflows/deploy-docs.yml
+    uses: ./.github/workflows/deploy-docs.yml
