@@ -37,4 +37,8 @@ jobs:
 
   deploy-docs:
     needs: build
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/deploy-docs.yml
