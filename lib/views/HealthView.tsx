@@ -1,5 +1,5 @@
 import { BaseView } from "./BaseView";
-import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from "obsidian";
+import { App, MarkdownPostProcessorContext } from "obsidian";
 import * as HealthService from "lib/domains/healthpoints";
 import { HealthCard } from "lib/components/health-card";
 import * as React from "react";
@@ -7,7 +7,11 @@ import * as ReactDOM from "react-dom/client";
 import { KeyValueStore } from "lib/services/kv/kv";
 import { HealthState } from "lib/domains/healthpoints";
 import { HealthBlock } from "lib/types";
-import { eventBus, ResetEvent } from "lib/services/event-bus";
+import { msgbus } from "lib/services/event-bus";
+import { hasTemplateVariables, processTemplate, createTemplateContext } from "lib/utils/template";
+import { useFileContext, FileContext } from "./filecontext";
+import { shouldResetOnEvent } from "lib/domains/events";
+import { ReactMarkdown } from "./ReactMarkdown";
 
 export class HealthView extends BaseView {
   public codeblock = "healthpoints";
@@ -20,27 +24,49 @@ export class HealthView extends BaseView {
   }
 
   public render(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
-    const healthMarkdown = new HealthMarkdown(el, source, this.kv, ctx.sourcePath);
+    const healthMarkdown = new HealthMarkdown(el, source, this.kv, ctx.sourcePath, ctx, this);
     ctx.addChild(healthMarkdown);
   }
 }
 
-class HealthMarkdown extends MarkdownRenderChild {
-  private reactRoot: ReactDOM.Root | null = null;
+class HealthMarkdown extends ReactMarkdown {
   private source: string;
   private kv: KeyValueStore;
   private filePath: string;
-  private eventUnsubscriber: (() => void) | null = null;
+  private fileContext: FileContext;
+  private currentHealthBlock: HealthBlock | null = null;
+  private originalHealthValue: number | string;
 
-  constructor(el: HTMLElement, source: string, kv: KeyValueStore, filePath: string) {
+  constructor(
+    el: HTMLElement,
+    source: string,
+    kv: KeyValueStore,
+    filePath: string,
+    ctx: MarkdownPostProcessorContext,
+    baseView: BaseView
+  ) {
     super(el);
     this.source = source;
     this.kv = kv;
     this.filePath = filePath;
+    this.fileContext = useFileContext(baseView.app, ctx);
+    this.originalHealthValue = HealthService.parseHealthBlock(this.source).health;
   }
 
   async onload() {
-    const healthBlock = HealthService.parseHealthBlock(this.source);
+    // Set up frontmatter change listener using filecontext
+    this.setupFrontmatterChangeListener();
+
+    // Process and render initial state
+    await this.processAndRender();
+  }
+
+  private async processAndRender() {
+    let healthBlock = HealthService.parseHealthBlock(this.source);
+
+    // Process template for health value if it contains template variables
+    healthBlock = this.processTemplateInHealthBlock(healthBlock);
+    this.currentHealthBlock = healthBlock;
 
     const stateKey = healthBlock.state_key;
     if (!stateKey) {
@@ -80,6 +106,86 @@ class HealthMarkdown extends MarkdownRenderChild {
     }
   }
 
+  private processTemplateInHealthBlock(healthBlock: HealthBlock): HealthBlock {
+    if (typeof healthBlock.health === "string" && hasTemplateVariables(healthBlock.health)) {
+      const templateContext = createTemplateContext(this.containerEl, this.fileContext);
+      const processedHealth = processTemplate(healthBlock.health, templateContext);
+      const healthValue = parseInt(processedHealth, 10);
+
+      if (!isNaN(healthValue)) {
+        return { ...healthBlock, health: healthValue };
+      } else {
+        console.warn(
+          `Template processed health value "${processedHealth}" is not a valid number, using original value`
+        );
+      }
+    }
+    return healthBlock;
+  }
+
+  private setupFrontmatterChangeListener() {
+    this.addUnloadFn(
+      this.fileContext.onFrontmatterChange(() => {
+        // Only re-process if we have template variables in the original health value
+        if (typeof this.originalHealthValue === "string" && hasTemplateVariables(this.originalHealthValue)) {
+          console.debug(`Frontmatter changed for ${this.filePath}, re-processing health template`);
+          this.handleFrontmatterChange();
+        }
+      })
+    );
+  }
+
+  private setupEventSubscription(healthBlock: HealthBlock) {
+    // Use the reset_on property or default to 'long-rest'
+    const resetOn = healthBlock.reset_on || "long-rest";
+
+    this.addUnloadFn(
+      msgbus.subscribe(this.filePath, "reset", (resetEvent) => {
+        if (shouldResetOnEvent(resetOn, resetEvent.eventType)) {
+          console.debug(`Resetting health ${healthBlock.state_key} due to ${resetEvent.eventType} event`);
+          this.handleResetEvent(healthBlock);
+        }
+      })
+    );
+  }
+
+  private async handleFrontmatterChange() {
+    if (!this.currentHealthBlock) return;
+
+    try {
+      // Re-process the template with updated frontmatter
+      const updatedHealthBlock = this.processTemplateInHealthBlock({
+        ...this.currentHealthBlock,
+        health: this.originalHealthValue,
+      });
+
+      // Check if the processed health value actually changed
+      const oldHealth = typeof this.currentHealthBlock.health === "number" ? this.currentHealthBlock.health : 6;
+      const newHealth = typeof updatedHealthBlock.health === "number" ? updatedHealthBlock.health : 6;
+
+      if (oldHealth !== newHealth) {
+        console.debug(`Health value changed from ${oldHealth} to ${newHealth}, updating max health`);
+
+        this.currentHealthBlock = updatedHealthBlock;
+
+        // Get current state and re-render with new max health
+        const stateKey = updatedHealthBlock.state_key;
+        if (stateKey) {
+          try {
+            const currentState = await this.kv.get<HealthState>(stateKey);
+            if (currentState) {
+              this.renderComponent(updatedHealthBlock, currentState);
+            }
+          } catch (error) {
+            console.error("Error loading state during frontmatter update:", error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error handling frontmatter change:", error);
+    }
+  }
+
   private renderComponent(healthBlock: HealthBlock, state: HealthState) {
     const stateKey = healthBlock.state_key;
     if (!stateKey) return;
@@ -116,26 +222,17 @@ class HealthMarkdown extends MarkdownRenderChild {
     }
   }
 
-  private setupEventSubscription(healthBlock: HealthBlock) {
-    // Use the reset_on property or default to 'long-rest'
-    const resetOn = healthBlock.reset_on || "long-rest";
-
-    this.eventUnsubscriber = eventBus.subscribe<ResetEvent>("reset", this.filePath, (resetEvent) => {
-      if (this.shouldResetOnEvent(resetOn, resetEvent.eventType)) {
-        console.debug(`Resetting health ${healthBlock.state_key} due to ${resetEvent.eventType} event`);
-        this.handleResetEvent(healthBlock);
-      }
-    });
-  }
-
   private async handleResetEvent(healthBlock: HealthBlock) {
     const stateKey = healthBlock.state_key;
     if (!stateKey) return;
 
     try {
+      // Ensure health is a number for reset
+      const maxHealth = typeof healthBlock.health === "number" ? healthBlock.health : 6;
+
       // Reset to full health and clear hit dice usage and death saves
       const resetState: HealthState = {
-        current: healthBlock.health, // Restore to maximum health
+        current: maxHealth, // Restore to maximum health
         temporary: 0, // Clear temporary HP
         hitdiceUsed: 0, // Reset hit dice
         deathSaveSuccesses: 0, // Clear death saves
@@ -149,46 +246,5 @@ class HealthMarkdown extends MarkdownRenderChild {
     } catch (error) {
       console.error(`Error resetting health state for ${stateKey}:`, error);
     }
-  }
-
-  /**
-   * Check if health should reset based on the given event type
-   */
-  private shouldResetOnEvent(resetOn: string | string[] | undefined, eventType: string): boolean {
-    if (!resetOn) return false;
-
-    if (typeof resetOn === "string") {
-      return resetOn === eventType;
-    }
-
-    if (Array.isArray(resetOn)) {
-      return resetOn.includes(eventType);
-    }
-
-    return false;
-  }
-
-  onunload() {
-    // Clean up React root to prevent memory leaks
-    if (this.reactRoot) {
-      try {
-        this.reactRoot.unmount();
-      } catch (e) {
-        console.error("Error unmounting React component:", e);
-      }
-      this.reactRoot = null;
-    }
-
-    // Clean up event subscription
-    if (this.eventUnsubscriber) {
-      try {
-        this.eventUnsubscriber();
-      } catch (e) {
-        console.error("Error unsubscribing from event:", e);
-      }
-      this.eventUnsubscriber = null;
-    }
-
-    console.debug("Unmounted React component and cleaned up event subscription in HealthMarkdown");
   }
 }

@@ -39,6 +39,7 @@ export type StatsBlock = {
   grid?: {
     columns?: number;
   };
+  dense?: boolean;
 };
 
 export type SkillsBlock = {
@@ -53,7 +54,7 @@ export type SkillsBlockBonus = GenericBonus;
 export type HealthBlock = {
   label: string;
   state_key: string;
-  health: number;
+  health: number | string; // Allow string for template support
   hitdice?: {
     dice: string;
     value: number;
@@ -73,11 +74,15 @@ export type BadgeItem = {
   reverse?: boolean;
   label: string;
   value: string;
+  sublabel: string;
 };
 
 export type BadgesBlock = {
   items: BadgeItem[];
   dense?: boolean;
+  grid: {
+    columns?: number;
+  };
 };
 
 export type InitiativeBlock = {

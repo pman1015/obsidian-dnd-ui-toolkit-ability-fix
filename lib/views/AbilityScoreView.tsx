@@ -4,6 +4,8 @@ import { BaseView } from "./BaseView";
 import { MarkdownPostProcessorContext } from "obsidian";
 import * as AbilityService from "lib/domains/abilities";
 import { Ability } from "lib/types";
+import { useFileContext } from "./filecontext";
+import { msgbus } from "lib/services/event-bus";
 
 export class AbilityScoreView extends BaseView {
   public codeblock = "ability";
@@ -13,7 +15,8 @@ export class AbilityScoreView extends BaseView {
 
     const data: Ability[] = [];
 
-    const frontmatter = this.frontmatter(ctx);
+    const fc = useFileContext(this.app, ctx);
+    const frontmatter = fc.frontmatter();
 
     for (const [key, value] of Object.entries(abilityBlock.abilities)) {
       const isProficient = abilityBlock.proficiencies.includes(key);
@@ -42,6 +45,7 @@ export class AbilityScoreView extends BaseView {
       });
     }
 
+    msgbus.publish(ctx.sourcePath, "abilities:changed", undefined);
     return Tmpl.Render(AbilityView(data));
   }
 }

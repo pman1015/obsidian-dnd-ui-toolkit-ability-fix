@@ -2,7 +2,7 @@ import * as Handlebars from "handlebars";
 import { AbilityScores, Frontmatter, SkillsBlock } from "../types";
 import { parseAbilityBlockFromDocument, calculateModifier } from "../domains/abilities";
 import { parseSkillsBlock } from "../domains/skills";
-import { MarkdownPostProcessorContext } from "obsidian";
+import { FileContext } from "../views/filecontext";
 
 export interface TemplateContext {
   frontmatter: Frontmatter;
@@ -50,16 +50,8 @@ export function processTemplate(text: string, context: TemplateContext): string 
   }
 }
 
-export interface BaseView {
-  frontmatter: (ctx: MarkdownPostProcessorContext) => Frontmatter;
-}
-
-export function createTemplateContext(
-  el: HTMLElement,
-  ctx: MarkdownPostProcessorContext,
-  baseView: BaseView
-): TemplateContext {
-  const frontmatter = baseView.frontmatter(ctx);
+export function createTemplateContext(el: HTMLElement, fileContext: FileContext): TemplateContext {
+  const frontmatter = fileContext.frontmatter();
 
   let abilities: AbilityScores = {
     strength: 0,
@@ -79,7 +71,7 @@ export function createTemplateContext(
 
   try {
     // Try to parse abilities from the document
-    const abilityBlock = parseAbilityBlockFromDocument(el, ctx);
+    const abilityBlock = parseAbilityBlockFromDocument(el, fileContext.md());
     abilities = abilityBlock.abilities;
   } catch (error) {
     // If no ability block found, use defaults
@@ -88,7 +80,7 @@ export function createTemplateContext(
 
   try {
     // Try to parse skills from the document
-    const sectionInfo = ctx.getSectionInfo(el);
+    const sectionInfo = fileContext.md().getSectionInfo(el);
     const documentText = sectionInfo?.text || "";
     const skillsCodeblocks = documentText.match(/```skills[\s\S]*?```/g);
 
