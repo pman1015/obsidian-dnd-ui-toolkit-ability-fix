@@ -8,6 +8,7 @@ import { ConsumableView } from "lib/views/ConsumableView";
 import { BadgesView } from "lib/views/BadgesView";
 import { InitiativeView } from "lib/views/InitiativeView";
 import { SpellComponentsView } from "lib/views/SpellComponentsView";
+import { EventButtonsView } from "lib/views/EventButtonsView";
 import { KeyValueStore } from "lib/services/kv/kv";
 import { JsonDataStore } from "./lib/services/kv/local-file-store";
 
@@ -68,29 +69,29 @@ const DEFAULT_SETTINGS: DndUIToolkitSettings = {
 
   // WOTC/Beyond color palette
   /*
-	colorBgPrimary: "hsl(33, 85%, 95%)",
-	colorBgSecondary: "hsl(33, 84%, 90%)",
-	colorBgTertiary: "hsl(33, 84%, 85%)",
-	colorBgHover: "hsl(33, 84%, 85%)",
-	colorBgDarker: "hsl(33, 84%, 80%)",
-	colorBgGroup: "hsl(33, 84%, 90%)",
-	colorBgProficient: "hsl(36, 100%, 99%)",
-
-	colorTextPrimary: "#000000",
-	colorTextSecondary: "#646464",
-	colorTextSublabel: "#4f4f4f",
-	colorTextBright: "#000000",
-	colorTextMuted: "#646464",
-	colorTextGroup: "#ba4040",
-
-	colorBorderPrimary: "hsl(30, 100%, 80%)",
-	colorBorderActive: "#ba4040",
-	colorBorderFocus: "rgba(109, 124, 186, 0.5)",
-
-	colorAccentTeal: "#00c25e",
-	colorAccentRed: "#ba4040",
-	colorAccentPurple: "#703bbf",
-	*/
+			  colorBgPrimary: "hsl(33, 85%, 95%)",
+			  colorBgSecondary: "hsl(33, 84%, 90%)",
+			  colorBgTertiary: "hsl(33, 84%, 85%)",
+			  colorBgHover: "hsl(33, 84%, 85%)",
+			  colorBgDarker: "hsl(33, 84%, 80%)",
+			  colorBgGroup: "hsl(33, 84%, 90%)",
+			  colorBgProficient: "hsl(36, 100%, 99%)",
+		  
+			  colorTextPrimary: "#000000",
+			  colorTextSecondary: "#646464",
+			  colorTextSublabel: "#4f4f4f",
+			  colorTextBright: "#000000",
+			  colorTextMuted: "#646464",
+			  colorTextGroup: "#ba4040",
+		  
+			  colorBorderPrimary: "hsl(30, 100%, 80%)",
+			  colorBorderActive: "#ba4040",
+			  colorBorderFocus: "rgba(109, 124, 186, 0.5)",
+		  
+			  colorAccentTeal: "#00c25e",
+			  colorAccentRed: "#ba4040",
+			  colorAccentPurple: "#703bbf",
+			  */
 };
 
 export default class DndUIToolkitPlugin extends Plugin {
@@ -150,6 +151,7 @@ export default class DndUIToolkitPlugin extends Plugin {
       new SkillsView(app),
       new BadgesView(app),
       new SpellComponentsView(app),
+      new EventButtonsView(app),
 
       // Dynamic/Stateful
       new HealthView(app, kv),
