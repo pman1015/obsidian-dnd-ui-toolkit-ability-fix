@@ -8,8 +8,8 @@ Events in the toolkit are **file-scoped**, meaning they only affect components w
 
 The event system works through two main mechanisms:
 
-1. **Event Triggers** - Components that dispatch events (like [Event Buttons](../components/event-buttons.md))
-2. **Event Listeners** - Components that respond to events (like [Consumables](../components/consumables.md) and [Health Points](../components/healthpoints.md))
+1. **Event Triggers** - Components that dispatch events (like [Event Buttons](../character-sheet/event-buttons.md))
+2. **Event Listeners** - Components that respond to events (like [Consumables](../components/consumables.md) and [Health Points](../character-sheet/healthpoints.md))
 
 ## Event Flow
 
@@ -44,7 +44,7 @@ in both the button and the component you want to reset.
 
 ### Event Buttons
 
-The only way to trigger events is through [Event Buttons](../components/event-buttons.md):
+The only way to trigger events is through [Event Buttons](../character-sheet/event-buttons.md):
 
 ````yaml
 ```event-btns
@@ -61,7 +61,7 @@ items:
 Any component with a `reset_on` field supports listening for events.
 
 - [Consumables](../components/consumables.md)
-- [Health Points](../components/healthpoints.md)
+- [Health Points](../character-sheet/healthpoints.md)
 
 ## File Scope Behavior
 
