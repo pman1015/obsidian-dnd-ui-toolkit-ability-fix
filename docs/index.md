@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /quick-start
+      link: /getting-started/quick-start
     - theme: alt
       text: View Components
       link: /character-sheet/ability-scores
