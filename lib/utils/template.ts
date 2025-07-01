@@ -1,6 +1,6 @@
 import * as Handlebars from "handlebars";
 import { AbilityScores, Frontmatter, SkillsBlock } from "../types";
-import { parseAbilityBlockFromDocument, calculateModifier } from "../domains/abilities";
+import { parseAbilityBlockFromDocument, calculateModifier, getTotalScore } from "../domains/abilities";
 import { parseSkillsBlock } from "../domains/skills";
 import { FileContext } from "../views/filecontext";
 
@@ -72,7 +72,16 @@ export function createTemplateContext(el: HTMLElement, fileContext: FileContext)
   try {
     // Try to parse abilities from the document
     const abilityBlock = parseAbilityBlockFromDocument(el, fileContext.md());
-    abilities = abilityBlock.abilities;
+
+    // Calculate total scores including bonuses that modify the score
+    abilities = {
+      strength: getTotalScore(abilityBlock.abilities.strength, "strength", abilityBlock.bonuses),
+      dexterity: getTotalScore(abilityBlock.abilities.dexterity, "dexterity", abilityBlock.bonuses),
+      constitution: getTotalScore(abilityBlock.abilities.constitution, "constitution", abilityBlock.bonuses),
+      intelligence: getTotalScore(abilityBlock.abilities.intelligence, "intelligence", abilityBlock.bonuses),
+      wisdom: getTotalScore(abilityBlock.abilities.wisdom, "wisdom", abilityBlock.bonuses),
+      charisma: getTotalScore(abilityBlock.abilities.charisma, "charisma", abilityBlock.bonuses),
+    };
   } catch (error) {
     // If no ability block found, use defaults
     console.debug("No ability block found, using default values");

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { hasTemplateVariables, processTemplate } from "./template";
+import { describe, it, expect, vi } from "vitest";
+import { hasTemplateVariables, processTemplate, createTemplateContext } from "./template";
 import type { TemplateContext } from "./template";
 
 describe("template", () => {
@@ -54,6 +54,63 @@ describe("template", () => {
 
     it("should return original text when no template variables", () => {
       expect(processTemplate("No templates here", mockContext)).toBe("No templates here");
+    });
+  });
+
+  describe("createTemplateContext", () => {
+    it("should create context with calculated ability scores including bonuses", () => {
+      const mockElement = {} as HTMLElement;
+      const mockFileContext = {
+        frontmatter: () => ({ proficiency_bonus: 2 }),
+        md: () => ({
+          getSectionInfo: vi.fn().mockReturnValue({
+            text: `
+\`\`\`ability
+abilities:
+  strength: 15
+  dexterity: 12
+bonuses:
+  - name: "Belt of Giant Strength"
+    target: "strength"
+    value: 4
+    modifies: "score"
+  - name: "Saving Throw Bonus"
+    target: "dexterity"
+    value: 2
+    modifies: "saving_throw"
+\`\`\`
+`,
+          }),
+        }),
+      } as any;
+
+      const context = createTemplateContext(mockElement, mockFileContext);
+
+      // Strength should be 15 + 4 = 19 (score bonus applied)
+      expect(context.abilities.strength).toBe(19);
+      // Dexterity should remain 12 (saving throw bonus doesn't affect score)
+      expect(context.abilities.dexterity).toBe(12);
+      // Other abilities should remain 0 (default values)
+      expect(context.abilities.constitution).toBe(0);
+    });
+
+    it("should handle missing ability blocks gracefully", () => {
+      const mockElement = {} as HTMLElement;
+      const mockFileContext = {
+        frontmatter: () => ({ proficiency_bonus: 2 }),
+        md: () => ({
+          getSectionInfo: vi.fn().mockReturnValue({
+            text: "No ability blocks here",
+          }),
+        }),
+      } as any;
+
+      const context = createTemplateContext(mockElement, mockFileContext);
+
+      // Should use default values when no ability block found
+      expect(context.abilities.strength).toBe(0);
+      expect(context.abilities.dexterity).toBe(0);
+      expect(context.frontmatter.proficiency_bonus).toBe(2);
     });
   });
 });
