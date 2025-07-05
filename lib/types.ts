@@ -99,9 +99,17 @@ export type BadgesBlock = {
   };
 };
 
+export type InitiativeConsumable = {
+  label: string;
+  state_key: string;
+  uses: number;
+  reset_on_round?: boolean;
+};
+
 export type InitiativeBlock = {
   state_key: string;
   items: InitiativeItem[];
+  consumables?: InitiativeConsumable[];
 };
 
 export type InitiativeItem = {
