@@ -7,7 +7,7 @@ export function parseAbilityBlockFromDocument(el: HTMLElement, ctx: MarkdownPost
   // Extract all ability code blocks from the document
   const sectionInfo = ctx.getSectionInfo(el);
   const documentText = sectionInfo?.text || "";
-  const codeblocks = documentText.match(/```ability[\s\S]*?```/g);
+  const codeblocks = documentText.match(/>\s*```ability\s*\r?\n([\s\S]*?)\r?\n>\s*```/g);
 
   if (!codeblocks) {
     throw new Error("No ability code blocks found");
